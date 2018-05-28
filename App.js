@@ -9,11 +9,11 @@ import {
   Switch
 } from 'react-native';
 import { PROVIDER_GOOGLE, PROVIDER_DEFAULT } from 'react-native-maps';
-import SetMarker from './examples/SetMarker';
-import Camera from './examples/Camera';
-import Login from './examples/Login';
-import Register from './examples/Register';
-import MarkerMap from './examples/MarkerMap';
+import SetMarker from './src/SetMarker';
+import Camera from './src/Camera';
+import Login from './src/Login';
+import Register from './src/Register';
+import MarkerMap from './src/MarkerMap';
 import t from 'tcomb-form-native';
 
 
@@ -98,7 +98,7 @@ class App extends React.Component {
       [Login, 'Logowanie', false],
       [Register, 'Rejestracja', false],
       [MarkerMap, 'Mapa', true],
-      [SetMarker, 'Dodaj zdjęcie!', true],
+      [SetMarker, 'Dodaj zdj�cie!', true],
     ]);
   }
 }
