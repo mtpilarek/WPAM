@@ -10,6 +10,7 @@ import {
 const propTypes = {
   children: PropTypes.node.isRequired,
   style: PropTypes.object,
+  borderStyle: PropTypes.object,
 };
 
 class CustomCallout extends React.Component {
@@ -21,8 +22,8 @@ class CustomCallout extends React.Component {
             {this.props.children}
          </View>
         </View>
-        <View style={styles.arrowBorder} />
-        <View style={styles.arrow} />
+        <View style={[styles.arrowBorder, this.props.borderStyle ]} />
+        <View style={[styles.arrow, this.props.borderStyle]} />
       </View>
     );
   }
@@ -39,11 +40,9 @@ const styles = StyleSheet.create({
     width: 320,
     flexDirection: 'row',
     alignSelf: 'flex-start',
-    backgroundColor: 'transparent',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 6,
-    borderColor: '#007a87',
     borderWidth: 0.5,
     zIndex: 1
   },
@@ -57,7 +56,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 16,
     borderColor: 'transparent',
-    borderTopColor: '#4da2ab',
     alignSelf: 'center',
     marginTop: -32,
   },
@@ -65,7 +63,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 16,
     borderColor: 'transparent',
-    borderTopColor: '#007a87',
     alignSelf: 'center',
     marginTop: -0.5,
   },

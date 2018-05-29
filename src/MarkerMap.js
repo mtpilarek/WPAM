@@ -24,11 +24,11 @@ const LATITUDE_DELTA = 0.922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const DEGREE_TO_METER = 111111;
 const SCREEN_GAP = 20;
-let id = 0;
 const SPACE = 0.01;
 
-function randomColor() {
-  return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+function randomColor(seed) {
+  var seedSum = seed ? [0,...seed.split('')].reduce((acc, val) => { return acc + val.charCodeAt() > 122 ? 122 : val.charCodeAt(); }) / (seed.length * 122): null;
+  return `#${Math.floor((seedSum != null ? seedSum : Math.random()) * 16777215).toString(16)}`;
 }
 
 
@@ -145,14 +145,18 @@ class MarkerMap extends React.Component {
             <Marker
               key={marker.id}
               coordinate={marker.coordinate}
-              pinColor={marker.color}
+              pinColor={marker.category ? randomColor(marker.category) : marker.color}
             >
             <Callout tooltip style={styles.customView} onPress={ () => this.enlargePhoto(marker.id) }>
-              <CustomCallout style={{width : width / 2}} >
+              <CustomCallout style={{width : width / 2, borderColor: marker.category ? randomColor(marker.category) : marker.color,
+                  backgroundColor: marker.category ? randomColor(marker.category) : marker.color}}
+                  borderStyle = {{borderTopColor : marker.category ? randomColor(marker.category) : marker.color}}>
               <Text>Użytkownik: {marker.UserName}</Text>
+              {marker.desc && <Text>Opis: {marker.desc}</Text>}
+              {marker.category && <Text>Kategoria: {marker.category}</Text>}
                 <Image 
                  style={{width: width / 2 - 40, height: height / 3 - 24}}
-          source={{uri: `data:image/png;base64,${marker.photoData}`}}
+                 source={{uri: `data:image/png;base64,${marker.photoData}`}} 
         />
             </CustomCallout >
               </Callout>

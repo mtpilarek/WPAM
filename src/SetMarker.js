@@ -5,7 +5,9 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
-  Image
+  Image,
+  Picker,
+  TextInput
 } from 'react-native';
 
 import MapView, { Circle, Marker, ProviderPropType } from 'react-native-maps';
@@ -25,8 +27,9 @@ const DEGREE_TO_METER = 111111;
 const SCREEN_GAP = 20;
 const SPACE = 0.01;
 
-function randomColor() {
-  return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+function randomColor(seed) {
+  var seedSum = seed ? [0,...seed.split('')].reduce((acc, val) => { return acc + val.charCodeAt() > 122 ? 122 : val.charCodeAt(); }) / (seed.length * 122) : null;
+  return `#${Math.floor((seedSum | Math.random()) * 16777215).toString(16)}`;
 }
 
 function calculateLongDelta(meters){
@@ -154,7 +157,7 @@ class SetMarker extends React.Component {
     return (
       <View style={this.state.photoData ? styles.container : styles.cameraContainer}>
        
-       {this.state.photoData && <MapView
+       {this.state.photoData && !this.state.finalize && <MapView
           provider={this.props.provider}
           style={styles.map}
           region={this.state.region}
@@ -184,6 +187,26 @@ class SetMarker extends React.Component {
           ))}
         </MapView>
         }
+
+     {this.state.finalize && !this.state.photoShow && <View>
+          <TextInput
+        style={{height: 40, width: 200, borderColor: 'gray', borderWidth: 1}}
+        onChangeText={(text) => this.setState({desc : text})}
+        placeholder={"Podaj krótki opis"}
+      />
+      <Picker
+        selectedValue={this.state.category}
+        style={{height: 40, width: 200, borderColor: 'gray', borderWidth: 1}}
+        onValueChange={(itemValue, itemIndex) => this.setState({category: itemValue})}>
+        <Picker.Item label="Bez kategorii" value="Bez kategorii" />
+        <Picker.Item label="Ludzie" value="Ludzie" />
+        <Picker.Item label="Zwierzęta" value="Zwierzęta" />
+        <Picker.Item label="Krajobrazy" value="Krajobrazy" />
+        <Picker.Item label="Dziwne" value="Dziwne" />
+        <Picker.Item label="Niesamowite" value="Niesamowite" />
+      </Picker>
+        </View>}
+
         {this.state.photoData && !this.state.photoShow && <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={() => this.setState({ photoShow : true})}
@@ -191,15 +214,32 @@ class SetMarker extends React.Component {
           >
             <Text>Wciśnij, aby podejrzeć zdjęcie</Text>
           </TouchableOpacity>
-          {this.state.markers && this.state.markers.length > 0 && <TouchableOpacity
+
+          {this.state.finalize  &&<TouchableOpacity
+            onPress={() => this.setState({finalize : false, markers : []})}
+            style={styles.bubble}
+          >
+            <Text>Wciśnij, aby wybrać lokalizację ponownie</Text>
+          </TouchableOpacity>
+          }
+
+         {this.state.finalize  && <TouchableOpacity
+            onPress={() => this.updateMarker()}
+            style={styles.bubble}
+          >
+            <Text>Wciśnij, aby wysłać zdjęcie</Text>
+          </TouchableOpacity>
+          }
+
+          {this.state.markers && this.state.markers.length > 0 && !this.state.finalize && <TouchableOpacity
             onPress={() => this.setState({ markers: [] })}
             style={styles.bubble}
           >
             <Text>Wciśnij, aby usunąć marker</Text>
           </TouchableOpacity>
         }
-          {this.state.markers && this.state.markers.length > 0 && <TouchableOpacity
-            onPress={() => this.updateMarker()}
+          {this.state.markers && this.state.markers.length > 0 && !this.state.finalize && <TouchableOpacity
+            onPress={() => this.setState({finalize : true})}
             style={styles.bubble}
           >
             <Text>Wciśnij, aby potwierdzić wybór lokalizacji</Text>
@@ -207,6 +247,7 @@ class SetMarker extends React.Component {
           }
         </View>
         }
+
         {this.state.photoShow &&  <View>
           <Image
     style={{width: width, height: height - 50}}
@@ -223,10 +264,12 @@ class SetMarker extends React.Component {
             onPress={() => this.setState({photoShow: false})}
             style={styles.bubble}
           >
-            <Text>Wciśnij, aby wrócić do wyboru lokalizacji</Text>
+            <Text>Wciśnij, aby wrócić</Text>
           </TouchableOpacity>
           </View>
         </View>}
+
+
        {!this.state.photoData && 
       <View style={{flex:1, flexDirection:'column', justifyContent:'center'}}>
         <RNCamera
@@ -253,6 +296,8 @@ class SetMarker extends React.Component {
   }
 
   updateMarker(){
+    var marker = this.state.markers[0];
+    marker.color = randomColor(this.state.category);
     fetch("https://wpam-api.azurewebsites.net/api/AddMarker?code=tTNIit0urpoRvlkP8gR/rdBNgsK73ZVp0ae4y0d88qLoanrmaDADig==",
     {
         headers: {
@@ -260,7 +305,7 @@ class SetMarker extends React.Component {
           'Content-Type': 'application/json'
         },
         method: "POST",
-        body: JSON.stringify({"claim" : this.props.getClaim(), "marker" : {...this.state.markers[0], "photoData" : this.state.photoData}})
+        body: JSON.stringify({"claim" : this.props.getClaim(), "marker" : {...this.state.markers[0], "photoData" : this.state.photoData, "desc": this.state.desc, "category" : this.state.category}})
     })
     .then(res => {return Utils.processResponse(res); })
     .then(res => { console.log(res); alert("Pomyślnie dodano zdjęcie!"); this.props.returnMethod(null); })
