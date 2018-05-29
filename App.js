@@ -86,7 +86,7 @@ class App extends React.Component {
         {!Component && this.state.Claim &&
           <TouchableOpacity
           style={styles.back}
-          onPress={() => logOut()}
+          onPress={() => this.logOut()}
           >
             <Text>Wyloguj</Text>
           </TouchableOpacity>
