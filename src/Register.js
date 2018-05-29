@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   StyleSheet,
   View,
@@ -11,8 +12,6 @@ import {
   Button,
 } from 'react-native';
 
-
-import sha512 from 'crypto-js/sha512';
 
 import Login from './Login';
 
@@ -73,7 +72,7 @@ class Register extends React.Component {
   handleRegister() {
     const form = this.refs.form.getValue();
     if(form && !this.state.formSent){
-    const creds = { userName:form.login, password: sha512(form.password).toString() }
+    const creds = { userName:form.login, password: form.hasło }
     this.setState({formSent : true});
     this.createUser(creds);
     }

@@ -13,8 +13,6 @@ import {
 
 import t from 'tcomb-form-native';
 
-import sha512 from 'crypto-js/sha512';
-
 import Register from './Register';
 
 import Utils from './Utils';
@@ -71,7 +69,7 @@ class Login extends React.Component {
   handleLogin() {
     const form = this.refs.form.getValue();
     if(form && !this.state.formSent){
-    const creds = { userName:form.login, password: sha512(form.password).toString() }
+    const creds = { userName:form.login, password: form.hasło }
     this.setState({formSent : true});
     this.checkCreds(creds);
   }
