@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { PROVIDER_GOOGLE, PROVIDER_DEFAULT } from 'react-native-maps';
 import SetMarker from './src/SetMarker';
-import Camera from './src/Camera';
 import Login from './src/Login';
 import Register from './src/Register';
 import MarkerMap from './src/MarkerMap';
@@ -32,7 +31,7 @@ class App extends React.Component {
     };
   }
 
-  renderExample([Component, title, AuthRequired]) {
+  renderComponent([Component, title, AuthRequired]) {
     return (
       (AuthRequired && this.state.Claim || !AuthRequired && !this.state.Claim) && <TouchableOpacity
         key={title}
@@ -55,8 +54,12 @@ class App extends React.Component {
     );
   }
 
+  logOut(){
+    this.setState({ Claim: null });
+  }
 
-  renderExamples(examples) {
+
+  renderComponents(components) {
     const {
       Component,
       Claim
@@ -76,29 +79,28 @@ class App extends React.Component {
             contentContainerStyle={styles.scrollview}
             showsVerticalScrollIndicator={false}
           >
-            {examples.map(example => this.renderExample(example))}
+            <Text style={{ fontWeight: 'bold', fontSize: 30 , paddingBottom : 30}}>WPAM</Text>
+            {components.map(component => this.renderComponent(component))}
           </ScrollView>
         }
         {!Component && this.state.Claim &&
           <TouchableOpacity
           style={styles.back}
-          onPress={() => this.setState({ Claim: null })}
+          onPress={() => logOut()}
           >
             <Text>Wyloguj</Text>
           </TouchableOpacity>
         }
-
       </View>
     );
   }
 
   render() {
-    return this.renderExamples([
-      // [<component>, <component description>, <Google compatible>, <Google add'l description>]
+    return this.renderComponents([
       [Login, 'Logowanie', false],
       [Register, 'Rejestracja', false],
       [MarkerMap, 'Mapa', true],
-      [SetMarker, 'Dodaj zdj�cie!', true],
+      [SetMarker, 'Dodaj zdjęcie!', true],
     ]);
   }
 }

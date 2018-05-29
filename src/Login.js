@@ -17,6 +17,8 @@ import sha512 from 'crypto-js/sha512';
 
 import Register from './Register';
 
+import Utils from './Utils';
+
 var Form = t.form.Form;
 
 var login = t.struct({
@@ -32,7 +34,12 @@ var options = {fields: {
 }}; 
 
 class Login extends React.Component {
-
+  constructor(props) {
+    super(props);
+    this.state = {
+      formSent : false
+    };
+  }
   
   render() {
     return (
@@ -61,10 +68,16 @@ class Login extends React.Component {
     );
   }
 
-  handleLogin = function() {
-    const form = this.refs.form.getValue()
+  handleLogin() {
+    const form = this.refs.form.getValue();
+    if(form && !this.state.formSent){
     const creds = { userName:form.login, password: sha512(form.password).toString() }
-    var $this = this;
+    this.setState({formSent : true});
+    this.checkCreds(creds);
+  }
+  };
+
+  checkCreds(creds){
     fetch("https://wpam-api.azurewebsites.net/api/Login?code=pF7cTxsgmnUgitrEAML7aX74F/ILsaxAx5iguaDse1EmOtiO50rmvw==",
     {
         headers: {
@@ -74,11 +87,13 @@ class Login extends React.Component {
         method: "POST",
         body: JSON.stringify(creds)
     })
-    .then(function(res){ return  processResponse(res); })
-    .then(function(res){ console.log(res); alert("Pomyślnie zalogowano użytkownika"); $this.props.setClaim(res.Claim); $this.props.returnMethod(null) })
-    .catch(function(res){ console.log(res); alert(res.response);})
-  };
+    .then(res => { return  Utils.processResponse(res); })
+    .then(res => { console.log(res); alert("Pomyślnie zalogowano użytkownika"); this.props.setClaim(res.Claim); this.props.returnMethod(null) })
+    .catch(res => { console.log(res); this.setState({formSent : false}); alert(res.response)})
+  }
 }
+
+
 
 
 
@@ -113,19 +128,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
 });
-
-processResponse = function(response) {
-  if (response.status === 200) {
-    return response.json();
-  } else {
-    return response.json().then((data) => {
-      let error      = new Error(response.status);
-      error.response = data.body;
-      error.status   = data.status;
-      throw error;
-    });
-  }
-}
 
 
 

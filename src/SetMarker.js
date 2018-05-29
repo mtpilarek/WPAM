@@ -5,11 +5,14 @@ import {
   Text,
   Dimensions,
   TouchableOpacity,
+  Image
 } from 'react-native';
 
 import MapView, { Circle, Marker, ProviderPropType } from 'react-native-maps';
 
 import { RNCamera } from 'react-native-camera';
+
+import Utils from './Utils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,7 +23,6 @@ const LATITUDE_DELTA = 0.922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const DEGREE_TO_METER = 111111;
 const SCREEN_GAP = 20;
-let id = 0;
 const SPACE = 0.01;
 
 function randomColor() {
@@ -77,10 +79,10 @@ class SetMarker extends React.Component {
     this.onMapPress = this.onMapPress.bind(this);
   }
 
-  componentDidMount = function() {
-    var $this = this;
+  componentDidMount() {
+
     navigator.geolocation.getCurrentPosition(
-       function(position) {
+       position => {
           const initialPosition = position;
           const region = {
             latitude: position.coords.latitude,
@@ -88,7 +90,7 @@ class SetMarker extends React.Component {
             latitudeDelta: calculateLongDelta(position.coords.accuracy) /  ASPECT_RATIO,
             longitudeDelta: calculateLongDelta(position.coords.accuracy),
           };
-          $this.setState({ initialPosition: initialPosition, lastPosition: initialPosition, region: region,
+          this.setState({ initialPosition: initialPosition, lastPosition: initialPosition, region: region,
             circles: [
             {
               center: {
@@ -100,10 +102,11 @@ class SetMarker extends React.Component {
           ]
         });
        },
-       function(error) {alert(error.message)},
+       error => {alert(error.message)},
        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
     );
-    this.watchID = navigator.geolocation.watchPosition(function(position){
+
+    this.watchID = navigator.geolocation.watchPosition(position => {
        const lastPosition = position;
        const region = {
         latitude: position.coords.latitude,
@@ -111,9 +114,11 @@ class SetMarker extends React.Component {
         latitudeDelta: calculateLongDelta(position.coords.accuracy) /  ASPECT_RATIO,
         longitudeDelta: calculateLongDelta(position.coords.accuracy),
       };
-      if(haversineDistance(position.coords, $this.state.region) > position.coords.accuracy)
-        $this.setState({ markers : []});
-       $this.setState({ lastPosition: lastPosition, region: region,
+      
+      if(haversineDistance(position.coords, this.state.region) > position.coords.accuracy)
+        this.setState({ markers : []});
+        
+       this.setState({ lastPosition: lastPosition, region: region,
         circles: [
         {
           center: {
@@ -124,9 +129,10 @@ class SetMarker extends React.Component {
         },
       ] });
     });
+
  };
 
- componentWillUnmount =function(){
+ componentWillUnmount(){
     navigator.geolocation.clearWatch(this.watchID);
 };
 
@@ -137,7 +143,7 @@ class SetMarker extends React.Component {
           ...this.state.markers,
           {
             coordinate: e.nativeEvent.coordinate,
-            key: `foo${id++}`,
+            key: `marker`,
             color: randomColor(),
           },
         ]
@@ -178,19 +184,20 @@ class SetMarker extends React.Component {
           ))}
         </MapView>
         }
-        {this.state.photoData && <View style={styles.buttonContainer}>
+        {this.state.photoData && !this.state.photoShow && <View style={styles.buttonContainer}>
           <TouchableOpacity
+            onPress={() => this.setState({ photoShow : true})}
+            style={styles.bubble}
+          >
+            <Text>Wciśnij, aby podejrzeć zdjęcie</Text>
+          </TouchableOpacity>
+          {this.state.markers && this.state.markers.length > 0 && <TouchableOpacity
             onPress={() => this.setState({ markers: [] })}
             style={styles.bubble}
           >
             <Text>Wciśnij, aby usunąć marker</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => this.setState({ photoData: null, markers: [] })}
-            style={styles.bubble}
-          >
-            <Text>Wciśnij, aby powtórzyć zdjęcie</Text>
-          </TouchableOpacity>
+        }
           {this.state.markers && this.state.markers.length > 0 && <TouchableOpacity
             onPress={() => this.updateMarker()}
             style={styles.bubble}
@@ -200,7 +207,28 @@ class SetMarker extends React.Component {
           }
         </View>
         }
+        {this.state.photoShow &&  <View>
+          <Image
+    style={{width: width, height: height - 50}}
+    source={{uri: `data:image/png;base64,${this.state.photoData}`}}
+  />
+  <View style={styles.buttonContainer}>
+            <TouchableOpacity
+            onPress={() => this.setState({ photoData: null, markers: [] , photoShow: false})}
+            style={styles.bubble}
+          >
+            <Text>Wciśnij, aby powtórzyć zdjęcie</Text>
+          </TouchableOpacity>
+  <TouchableOpacity
+            onPress={() => this.setState({photoShow: false})}
+            style={styles.bubble}
+          >
+            <Text>Wciśnij, aby wrócić do wyboru lokalizacji</Text>
+          </TouchableOpacity>
+          </View>
+        </View>}
        {!this.state.photoData && 
+      <View style={{flex:1, flexDirection:'column', justifyContent:'center'}}>
         <RNCamera
             ref={ref => {
               this.camera = ref;
@@ -211,10 +239,7 @@ class SetMarker extends React.Component {
             permissionDialogTitle={'Permission to use camera'}
             permissionDialogMessage={'We need your permission to use your camera phone'}
         />
-          }
-          {!this.state.photoData && 
-        <View style={{ flex: 0, flexDirection: 'row', justifyContent: 'center' }}>
-          <TouchableOpacity
+                  <TouchableOpacity
             onPress={this.takePicture.bind(this)}
             style={styles.capture}
           >
@@ -222,12 +247,12 @@ class SetMarker extends React.Component {
           </TouchableOpacity>
         </View>
           }
+
       </View>
     );
   }
 
-  updateMarker = function(){
-    var $this = this;
+  updateMarker(){
     fetch("https://wpam-api.azurewebsites.net/api/AddMarker?code=tTNIit0urpoRvlkP8gR/rdBNgsK73ZVp0ae4y0d88qLoanrmaDADig==",
     {
         headers: {
@@ -235,40 +260,26 @@ class SetMarker extends React.Component {
           'Content-Type': 'application/json'
         },
         method: "POST",
-        body: JSON.stringify({"claim" : $this.props.getClaim(), "marker" : {...$this.state.markers[0], "photoData" : this.state.photoData}})
+        body: JSON.stringify({"claim" : this.props.getClaim(), "marker" : {...this.state.markers[0], "photoData" : this.state.photoData}})
     })
-    .then(function(res){return processResponse(res); })
-    .then(function(res){ console.log(res); alert("Pomyślnie dodano zdjęcie!"); $this.props.returnMethod(null); })
-    .catch(function(res){ console.log(res); alert(res.response);})
+    .then(res => {return Utils.processResponse(res); })
+    .then(res => { console.log(res); alert("Pomyślnie dodano zdjęcie!"); this.props.returnMethod(null); })
+    .catch(res => { console.log(res); alert(res.response)})
     
   }
   
-  takePicture = async function() {
+  async takePicture() {
     if (this.camera) {
       const options = { quality: 0.5, base64: true };
       const data = await this.camera.takePictureAsync(options)
       if(data)
         this.setState({photoData : data.base64})
-      else
-      this.setState({photoData : "iVBORw0KGgoAAAANSUhEUgAAADMAAAAzCAYAAAA6oTAqAAAAEXRFWHRTb2Z0d2FyZQBwbmdjcnVzaEB1SfMAAABQSURBVGje7dSxCQBACARB+2/ab8BEeQNhFi6WSY  zYLYudDQYGBgYGBgYGBgYGBgYGBgZmcvDqYGBgmhivGQYGBgYGBgYGBgYGBgYGBgbmQw+P/eMrC5UTVAAAAABJRU5ErkJggg=="})
       console.log(data.uri);
     }
   };
 
 }
 
-processResponse = function(response) {
-  if (response.status === 200) {
-    return response.json();
-  } else {
-    return response.json().then((data) => {
-      let error      = new Error(response.status);
-      error.response = data.body;
-      error.status   = data.status;
-      throw error;
-    });
-  }
-};
 
 SetMarker.propTypes = {
   provider: ProviderPropType,
@@ -301,8 +312,10 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginVertical: 20,
     backgroundColor: 'transparent',
+    alignItems: 'center',
   },
   cameraContainer: {
     flex: 1,
@@ -311,8 +324,7 @@ const styles = StyleSheet.create({
   },
   preview: {
     flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    width: width,
   },
   capture: {
     flex: 0,
